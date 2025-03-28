@@ -6,6 +6,8 @@ export const decodeHandler = async (req: Request, res: Response): Promise<Respon
   try {
     const { texts, caller } = req.body;
 
+    console.log(texts, caller);
+
     if (!texts || !Array.isArray(texts)) {
       return res.status(400).json({
         status: 'error',
@@ -14,8 +16,9 @@ export const decodeHandler = async (req: Request, res: Response): Promise<Respon
     }
 
     const result = await process(texts);
+    console.log(result);
     const txs = await generateTxs(caller, result);
-
+    console.log(txs);
     return res.json({
       status: 'success',
       data: {
