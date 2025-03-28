@@ -74,7 +74,7 @@ const generateStellarTransferTx = async (
         ...[
           accountToScVal(caller), // from
           accountToScVal(result.to), // to
-          numberToI128(result.amount), // quantity
+          numberToI128(result.amount * 10 ** 7), // quantity
         ]
       )
     )
