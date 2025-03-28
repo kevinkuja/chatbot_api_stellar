@@ -26,13 +26,17 @@ export const processTextsWithAI = async (texts: string[]): Promise<TransactionRe
   Previous texts: ${texts.slice(0, -1).join('\n')} only for context, not for the current text.
   `;
 
+  console.log(prompt);
+
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     store: true,
     messages: [{ role: 'user', content: prompt }],
   });
 
+  console.log(completion);
   const content = completion.choices[0].message.content;
+  console.log(content);
   if (!content) {
     throw new Error('No content returned from OpenAI');
   }
