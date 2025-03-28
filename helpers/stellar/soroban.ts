@@ -6,7 +6,7 @@ import {
   nativeToScVal,
   Operation,
   scValToNative,
-  SorobanRpc,
+  rpc as SorobanRpc,
   TimeoutInfinite,
   Transaction,
   TransactionBuilder,
