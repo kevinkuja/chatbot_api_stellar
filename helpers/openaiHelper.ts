@@ -16,6 +16,7 @@ export const processTextsWithAI = async (texts: string[]): Promise<TransactionRe
   If transfer, extract the following fields:
   - to: the recipient address or destination.
 
+  If any field is not found or undefined, return a message detailing the field that is missing.
   
   Only return the JSON, nothing else. Without any other text or comments.
   In the "description" field, return a description of the transaction, describing deeply the future transaction.

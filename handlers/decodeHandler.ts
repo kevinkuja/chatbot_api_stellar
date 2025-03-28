@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { process } from '../helpers/openaiHelper.js';
 import { generateTxs } from '../helpers/actions.js';
+import { StellarTransaction } from '../types/index.js';
 
 export const decodeHandler = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -17,7 +18,13 @@ export const decodeHandler = async (req: Request, res: Response): Promise<Respon
 
     const result = await process(texts);
     console.log(result);
-    const txs = await generateTxs(caller, result);
+    let txs: StellarTransaction[] = [];
+    try {
+      txs = await generateTxs(caller, result);
+    } catch (error) {
+      console.log(error);
+      txs = [];
+    }
     console.log(txs);
     return res.json({
       status: 'success',
