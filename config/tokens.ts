@@ -96,11 +96,17 @@ export const TOKENS = [
   },
 ];
 
-export const getTokenAddress = (token: string): string => {
-  return (
-    TOKENS.find(
-      t =>
-        t.code.toUpperCase() === token.toUpperCase() || t.name.toUpperCase() === token.toUpperCase()
-    )?.contract || ''
+export const getTokenDetails = (token: string): TokenDetails | undefined => {
+  return TOKENS.find(
+    t =>
+      t.code.toUpperCase() === token.toUpperCase() || t.name.toUpperCase() === token.toUpperCase()
   );
 };
+
+export interface TokenDetails {
+  name: string;
+  contract: string;
+  code: string;
+  icon: string;
+  decimals: number;
+}

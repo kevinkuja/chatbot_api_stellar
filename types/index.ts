@@ -7,6 +7,9 @@ export interface TransactionResult {
   description?: string;
   message?: string;
   memo?: string;
+  dest_token?: string;
+  price?: number;
+  dest_min?: number;
 }
 
 export type StellarTransaction = string;

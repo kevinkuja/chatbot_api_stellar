@@ -1,4 +1,5 @@
 import openai from '../config/openai.js';
+import { TOKENS } from '../config/tokens.js';
 import { TransactionResult } from '../types';
 
 export const processTextsWithAI = async (texts: string[]): Promise<TransactionResult> => {
@@ -7,25 +8,35 @@ export const processTextsWithAI = async (texts: string[]): Promise<TransactionRe
   }
 
   const prompt = `
-  Interpret the following text and extract the following fields in JSON format:
-  - action: should be one of ["transfer"]. If no valid action is found, return an error.
-  - amount: the numeric value being transferred.
-  - token: the currency/token being used.
-  - chain: the chain of the transaction [stellar].
+Interpret the following text and extract the following fields in JSON format based on the specified action. Return only the JSON object, nothing else (no additional text, comments, or markdown).
 
-  If transfer, extract the following fields:
-  - to: the recipient address or destination.
+Fields to extract for all actions:
+- "action": Should be similar to (another language, synonyms, etc) ["transfer", "swap", "invest"].
+- "amount": The numeric value involved (e.g., amount to transfer, swap, or sell). If not found, set to null and include in "message".
+- "token": The currency or token being used. Must match a "code" or "name" from this list: ${JSON.stringify(TOKENS.map(t => ({ code: t.code, name: t.name })))}. If not found, set to null and include in "message".
+- "chain": The blockchain, must be "stellar". If not specified, assume "stellar".
 
-  If any field is not found or undefined, return a message detailing the field that is missing.
-  
-  Only return the JSON, nothing else. Without any other text or comments.
-  In the "description" field, return a description of the transaction, describing deeply the future transaction.
-  In the "message" field, return a message to the user, describing the transaction.
+Action-specific fields:
+- Only "transfer":
+  - "to": The recipient address or destination (should start with 'G' and be 56 characters long). If not found or invalid, set to null and include in "message".
+- Only "swap":
+  - "dest_token": The token to receive. Must match a "code" or "name" from the token list. If not found, set to null and include in "message".
+  - "dest_min": Minimum amount to receive. If not found, set to 0.
+- Only "invest":
+  - "platform": The platform to invest in. Must match a "code" or "name" from the platform list. If not found, assume it's "YieldBlox".
 
-  Current text: ${texts[texts.length - 1]}
-  
-  Previous texts: ${texts.slice(0, -1).join('\n')} only for context, not for the current text.
-  `;
+Additional fields:
+- "description": A detailed description of the future transaction based on the extracted fields (e.g., "This transaction will transfer 10 XLM from the caller to GBZX... on Stellar").
+- "message": A user-friendly message explaining the transaction or missing fields (e.g., "This will transfer 10 XLM to GBZX..., but the token was not specified").
+
+Rules:
+- If a field is missing or unclear, set it to null and explain it in the "message", but return the other fields as JSON.
+- Use the current text to determine the action and fields. Previous texts are for context only and should not override the current text.
+- Assume reasonable defaults where applicable (e.g., chain = "stellar" if not mentioned).
+
+Current text: ${texts[texts.length - 1]}
+
+Previous texts (for context only): ${texts.slice(0, -1).join('\n')}`;
 
   console.log(prompt);
 
