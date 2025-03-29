@@ -1,4 +1,6 @@
-export const TOKENS = [
+import { Networks } from '@stellar/stellar-sdk';
+
+export const TESTNET_TOKENS = [
   {
     name: 'Stellar Lumens',
     contract: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
@@ -15,7 +17,7 @@ export const TOKENS = [
   },
   {
     name: 'USDCoin',
-    contract: 'CA2D2WZ4OFT2XJLAY2IFSQFJJSNMIV4I4FQZOJ6DD6VQNIGOP7N24VZW',
+    contract: 'GAHPYWLK6YRN7CVYZOO4H3VDRZ7PVF5UJGLZCSPAEIKJE2XSWF5LAGER',
     code: 'USDC',
     icon: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
     decimals: 7,
@@ -36,7 +38,7 @@ export const TOKENS = [
   },
   {
     name: 'Aquarius',
-    contract: 'CDQL2NRRSQWABIKBA4TZEZA7RJ2LAKBE6A3K7FLXGNQIE4ASNVAHVV5Y',
+    contract: 'GAHPYWLK6YRN7CVYZOO4H3VDRZ7PVF5UJGLZCSPAEIKJE2XSWF5LAGER',
     code: 'AQUA',
     icon: 'https://static.ultrastellar.com/media/assets/img/1878ee2d-2fd1-4e31-89a7-5a430f1596f8.png',
     decimals: 7,
@@ -94,13 +96,82 @@ export const TOKENS = [
     icon: '',
     decimals: 7,
   },
+  {
+    name: 'FXG',
+    contract: 'CB4WLX4IP2MWAT2ITRRO7I5YM743NILBBOWMUIVWYSLWWASZVRGB5YD3',
+    code: 'FXG',
+    icon: '',
+    decimals: 7,
+  },
+  {
+    name: 'USDx',
+    contract: 'GAVH5ZWACAY2PHPUG4FL3LHHJIYIHOFPSIUGM2KHK25CJWXHAV6QKDMN',
+    code: 'USDx',
+    icon: '',
+    decimals: 7,
+  },
+  {
+    name: 'EURx',
+    contract: 'CBA2S6NROG4PN36FSFZTWGD4JVQDCUYBMCW2H4J64JCGH7ZSQYTAIZ54',
+    code: 'EURx',
+    icon: '',
+    decimals: 7,
+  },
+  {
+    name: 'GBPx',
+    contract: 'CDYP7LY3OIKHFVDID3CO6MQJ45T37N2G63NYXN33OQJPLW3X2PYRFHVT',
+    code: 'GBPx',
+    icon: '',
+    decimals: 7,
+  },
 ];
 
-export const getTokenDetails = (token: string): TokenDetails | undefined => {
-  return TOKENS.find(
-    t =>
-      t.code.toUpperCase() === token.toUpperCase() || t.name.toUpperCase() === token.toUpperCase()
-  );
+export const MAINNET_TOKENS = [
+  {
+    name: 'Stellar Lumens',
+    contract: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
+    code: 'XLM',
+    icon: 'https://assets.coingecko.com/coins/images/100/standard/Stellar_symbol_black_RGB.png',
+    decimals: 7,
+  },
+  {
+    name: 'Aquarius',
+    contract: 'GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA',
+    code: 'AQUA',
+    icon: 'https://static.ultrastellar.com/media/assets/img/1878ee2d-2fd1-4e31-89a7-5a430f1596f8.png',
+    decimals: 7,
+  },
+  {
+    name: 'USDC',
+    contract: 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',
+    code: 'USDC',
+    icon: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+    decimals: 7,
+  },
+
+  {
+    name: 'XTAR',
+    contract: 'GAORYJ3KBDGIM7FFSKVUJHJ5NEFWIRDIAGGBJBJS7TY6ECZS53257IG4',
+    code: 'XTAR',
+    icon: 'https://www.dogstarcoin.com/assets/img/dogstarcoin-logo.png',
+    decimals: 7,
+  },
+];
+export const getTokenDetails = (
+  token: string,
+  type: 'testnet' | 'mainnet' = 'testnet'
+): TokenDetails | undefined => {
+  return type === 'testnet'
+    ? TESTNET_TOKENS.find(
+        t =>
+          t.code.toUpperCase() === token.toUpperCase() ||
+          t.name.toUpperCase() === token.toUpperCase()
+      )
+    : MAINNET_TOKENS.find(
+        t =>
+          t.code.toUpperCase() === token.toUpperCase() ||
+          t.name.toUpperCase() === token.toUpperCase()
+      );
 };
 
 export interface TokenDetails {

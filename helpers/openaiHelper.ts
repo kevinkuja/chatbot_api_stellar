@@ -1,5 +1,4 @@
 import openai from '../config/openai.js';
-import { TOKENS } from '../config/tokens.js';
 import { TransactionResult } from '../types';
 
 export const processTextsWithAI = async (texts: string[]): Promise<TransactionResult> => {
@@ -13,7 +12,7 @@ Interpret the following text and extract the following fields in JSON format bas
 Fields to extract for all actions:
 - "action": Should be similar to (another language, synonyms, etc) ["transfer", "swap", "invest"].
 - "amount": The numeric value involved (e.g., amount to transfer, swap, or sell). If not found, set to null and include in "message".
-- "token": The currency or token being used. Must match a "code" or "name" from this list: ${JSON.stringify(TOKENS.map(t => ({ code: t.code, name: t.name })))}. If not found, set to null and include in "message".
+- "token": The currency or token being used. If not found, set to null and include in "message".
 - "chain": The blockchain, must be "stellar". If not specified, assume "stellar".
 
 Action-specific fields:

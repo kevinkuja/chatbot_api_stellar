@@ -1,4 +1,16 @@
-import { Contract, Memo, TimeoutInfinite, xdr } from '@stellar/stellar-sdk';
+import {
+  Contract,
+  Memo,
+  Networks,
+  StrKey,
+  TimeoutInfinite,
+  xdr,
+  Address,
+  XdrLargeInt,
+  TransactionBuilder,
+  Asset,
+  rpc,
+} from '@stellar/stellar-sdk';
 import { StellarTransaction, TransactionResult } from '../types/index.js';
 import {
   accountToScVal,
@@ -8,11 +20,18 @@ import {
   BASE_FEE,
 } from './stellar/soroban.js';
 import { xlmToStroop } from './stellar/format.js';
-import { TESTNET_DETAILS } from './stellar/network.js';
-import { getTokenDetails } from '../config/tokens.js';
-import { VectorStoreFilesPage } from 'openai/resources/vector-stores/files.js';
+import {
+  MAINNET_DETAILS,
+  SOROBAN_MAINNET_DETAILS,
+  SOROBAN_TESTNET_DETAILS,
+  TESTNET_DETAILS,
+} from './stellar/network.js';
+import { getTokenDetails, TokenDetails } from '../config/tokens.js';
+import fetch from 'node-fetch';
 
 const YIELDBLOX_CONTRACT_ADDRESS = 'CBP7NO6F7FRDHSOFQBT2L2UWYIZ2PU76JKVRYAQTG3KZSQLYAOKIF2WB';
+const routerContractId = 'CBQDHNBFBZYE4MKPWBSJOPIYLW4SFSXAXUTSXJN76GNKYVYPCKWC6QUK';
+
 export const generateTxs = async (
   caller: any,
   result: TransactionResult
@@ -104,39 +123,45 @@ const generateStellarSwapTx = async (
   caller: any,
   result: TransactionResult
 ): Promise<StellarTransaction> => {
-  const server = getServer(TESTNET_DETAILS);
-  const txBuilder = await getTxBuilder(
-    caller,
-    xlmToStroop(BASE_FEE).toString(),
-    server,
-    TESTNET_DETAILS.networkPassphrase
-  );
-  const sendToken = getTokenDetails(result.token);
-  const destToken = getTokenDetails(result.dest_token || '');
+  const server = new rpc.Server(SOROBAN_TESTNET_DETAILS.networkUrl);
+  const sendToken = getTokenDetails(result.token, 'testnet');
+  const destToken = getTokenDetails(result.dest_token || '', 'testnet');
+
   if (!sendToken || !destToken) {
     throw new Error(`Token ${!sendToken ? result.token : result.dest_token} not found in TOKENS`);
   }
+
+  const estimateResult = await findSwapPath(sendToken, destToken, result.amount);
+  // No need to generate swapsChain manually, use value received from find-path api
+  const swapsChain = xdr.ScVal.fromXDR(estimateResult.swap_chain_xdr, 'base64');
+  const tokenInScVal = Address.contract(StrKey.decodeContract(sendToken.contract)).toScVal();
+  const amountU128 = new XdrLargeInt('u128', result.amount.toFixed()).toU128();
+  const amountWithSlippage = estimateResult.amount * 0.99; // slippage 1%
+  const amountWithSlippageU128 = new XdrLargeInt('u128', amountWithSlippage.toFixed()).toU128();
+
+  const account = await server.getAccount(caller);
   try {
-    const contract = new Contract(sendToken.contract);
-    const tx = txBuilder
+    const contract = new Contract(routerContractId);
+
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: Networks.PUBLIC,
+    })
       .addOperation(
         contract.call(
-          'swap',
-          ...[
-            accountToScVal(caller),
-            accountToScVal(destToken.contract),
-            numberToI128(result.amount || 0),
-            numberToI128(result.dest_min || 0),
-          ]
+          'swap_chained',
+          xdr.ScVal.scvAddress(Address.fromString(caller).toScAddress()),
+          swapsChain,
+          tokenInScVal,
+          amountU128,
+          amountWithSlippageU128
         )
       )
-      .setTimeout(TimeoutInfinite);
+      .setTimeout(TimeoutInfinite)
+      .build();
 
-    if (result.memo && result.memo.length > 0) {
-      tx.addMemo(Memo.text(result.memo));
-    }
-    const preparedTransaction = await server.prepareTransaction(tx.build());
-    return preparedTransaction.toXDR();
+    const preparedTx = await server.prepareTransaction(tx);
+    return preparedTx.toXDR();
   } catch (error) {
     console.error(error);
     return '0xMOCK';
@@ -195,3 +220,34 @@ const generateStellarInvestTx = async (
     return '0xMOCK';
   }
 };
+
+const baseApi = 'https://amm-api.aqua.network/api/external/v1'; // 'https://amm-api-testnet.aqua.network/api/external/v1';
+const baseApiTestnet = 'https://amm-api-testnet.aqua.network/api/external/v1';
+async function findSwapPath(tokenFrom: TokenDetails, tokenTo: TokenDetails, amount: number) {
+  const headers = { 'Content-Type': 'application/json' };
+  const tokenIn =
+    tokenFrom.code == 'XLM' ? Asset.native() : new Asset(tokenFrom.code, tokenFrom.contract);
+  const tokenOut =
+    tokenTo.code == 'XLM' ? Asset.native() : new Asset(tokenTo.code, tokenTo.contract);
+
+  const body = JSON.stringify({
+    token_in_address: tokenIn.contractId(SOROBAN_TESTNET_DETAILS.networkPassphrase),
+    token_out_address: tokenOut.contractId(SOROBAN_TESTNET_DETAILS.networkPassphrase),
+    amount: amount.toString(),
+  });
+
+  const estimateResponse = await fetch(`${baseApiTestnet}/find-path/`, {
+    method: 'POST',
+    body,
+    headers,
+  });
+  const estimateResult: any = await estimateResponse.json();
+
+  console.log(estimateResult);
+
+  if (!estimateResult.success) {
+    throw new Error('Estimate failed');
+  }
+
+  return estimateResult;
+}
